@@ -11,5 +11,5 @@ numpy
 Pillow
 python-multipart
 torch
-torchao
+torchao==0.15.0
 uvicorn
