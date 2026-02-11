@@ -1,4 +1,5 @@
 diffusers
+dotenv
 fastapi
 langchain
 langchain-core
