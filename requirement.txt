@@ -1,0 +1,13 @@
+diffusers
+fastapi
+langchain
+langchain-core
+langchain-google-genai
+langchain-openai
+langgraph
+numpy
+Pillow
+python-multipart
+torch
+torchao
+uvicorn

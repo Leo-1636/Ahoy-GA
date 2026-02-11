@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+
+storage/
+
+node_modules/
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+.venv/
+venv/
+env/
