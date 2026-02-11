@@ -13,12 +13,14 @@ class QwenImageEdit:
             model_id, 
             subfolder = "transformer", 
             torch_dtype = torch_dtype,
-            quantization_config = quantization_config
+            quantization_config = quantization_config,
+            trust_remote_code = True
         )
         self.pipeline = DiffusionPipeline.from_pretrained(
             model_id,
             transformer = transformer,
             torch_dtype = torch_dtype,
+            trust_remote_code = True
         )
         self.pipeline.enable_model_cpu_offload()
 
