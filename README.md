@@ -13,20 +13,20 @@ AI 生成資料工具：
 
 | 用途 | 模型 | 說明 |
 |------|------|------|
-| 圖片生成（雲端） | **Google Gemini**（`gemini-3-pro-image-preview`） | 依提示詞與參考圖生成 4K、16:9 圖片，需 `GOOGLE_API_KEY`。 |
-| 圖片生成（本地） | **FLUX.2-klein**（Black Forest Labs） | 依顯存自動選 9B 或 4B，需 CUDA、本地 GPU。 |
-| 標籤生成 | **OpenAI GPT**（`gpt-5.2-2025-12-11`） | 依圖片與提示詞生成文字標籤，需 `OPENAI_API_KEY`。 |
+| 圖片生成 <br>（雲端） | **Google Gemini** <br>（`gemini-3-pro-image-preview`） | 依提示詞與參考圖生成 4K、16:9 圖片，<br> 需 `GOOGLE_API_KEY`。 |
+| 圖片生成 <br>（本地） | **FLUX.2-klein**（Black Forest Labs） | 依顯存自動選 9B 或 4B，<br> 需 CUDA、本地 GPU。 |
+| 標籤生成 | **OpenAI GPT** <br>（`gpt-5.2-2025-12-11`） | 依圖片與提示詞生成文字標籤，<br> 需 `OPENAI_API_KEY`。 |
 
 Generate 頁面可切換 **Gemini** 或 **Flux** 作為圖片生成來源；標籤（Tag）功能固定使用 GPT 或是人為標註。
 
 ## 安裝與執行
 
-### 一鍵啟動（前端 + 後端）
+### 快速啟動（前端 + 後端）
 
 在專案根目錄執行下列指令，會同時啟動後端（port 8000）與前端開發伺服器：
 
 ```bash
-python run.py
+python main.py
 ```
 
 首次請先依下方「後端」「前端」完成 `pip install`、`npm install`。
