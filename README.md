@@ -5,9 +5,21 @@ AI 生成資料工具：集中管理原始圖與資料集，以 **Gemini / Flux*
 ## 環境需求
 
 - Python 3.x  
-- Node.js
+- Node.js  
+- **NVIDIA Driver** 與 **CUDA**（使用 Flux 本地生成圖片時需要；僅用 Gemini 可省略）
 
 ## 安裝與執行
+
+### 一鍵啟動（前端 + 後端）
+
+在專案根目錄執行下列指令，會同時啟動後端（port 8000）與前端開發伺服器：
+
+```bash
+python run.py
+```
+
+適用 Linux 與 Windows。結束時在終端按 `Ctrl+C` 會一併關閉前後端。  
+（首次請先依下方「後端」「前端」完成 `pip install`、`npm install`。）
 
 ### 1. 後端
 
