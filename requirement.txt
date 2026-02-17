@@ -10,6 +10,5 @@ langgraph
 numpy
 Pillow
 python-multipart
-torch==2.9.0 --index-url https://download.pytorch.org/whl/cu129
-torchao==0.15.0
+torch --index-url https://download.pytorch.org/whl/cu129
 uvicorn
