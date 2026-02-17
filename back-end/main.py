@@ -7,7 +7,7 @@ from fastapi.responses import Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from clients.gemini import gereate_image as gemini_generate_image
-# Flux 延遲載入（依賴 diffusers），僅在選用 Flux 時才 import
+from clients.flux import generate_image as flux_generate_image
 from clients.gpt import generate_text
 
 from config.config import path as config_path
@@ -17,10 +17,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins = ["*"],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"],
 )
 
 @app.get("/api/images")
@@ -74,23 +74,16 @@ async def generate_image_endpoint(
         images_list.append(image_util.open_bytes(contents))
 
     if model == "flux":
-        try:
-            from clients.flux import generate_image as flux_generate_image
-        except Exception as e:
-            raise HTTPException(
-                status_code=503,
-                detail=f"Flux 模組載入失敗: {e!s}. 請先使用 Gemini，或檢查 requirement 中 diffusers、torch 版本。"
-            )
         generated_image = flux_generate_image(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            images=images_list
+            system_prompt = system_prompt,
+            user_prompt = user_prompt,
+            images = images_list
         )
     else:
         generated_image = gemini_generate_image(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            images=images_list
+            system_prompt= system_prompt,
+            user_prompt = user_prompt,
+            images = images_list
         )
 
     return Response(
