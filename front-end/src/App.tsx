@@ -58,7 +58,7 @@ function App() {
   // 生成圖片相關狀態
   const [systemPrompt, setSystemPrompt] = useState('')
   const [userPrompt, setUserPrompt] = useState('')
-  const [selectedModel, setSelectedModel] = useState<'gemini' | 'qwen'>('gemini')
+  const [selectedModel, setSelectedModel] = useState<'gemini' | 'flux'>('gemini')
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]) // 原始 File 物件
   const [previewUrls, setPreviewUrls] = useState<string[]>([])    // 用於預覽的 Blob URLs
   const [isGenerating, setIsGenerating] = useState(false)
@@ -881,10 +881,10 @@ function App() {
                     Gemini
                   </button>
                   <button 
-                    className={`model-btn ${selectedModel === 'qwen' ? 'active' : ''}`}
-                    onClick={() => setSelectedModel('qwen')}
+                    className={`model-btn ${selectedModel === 'flux' ? 'active' : ''}`}
+                    onClick={() => setSelectedModel('flux')}
                   >
-                    Qwen
+                    Flux
                   </button>
                 </div>
               </div>
