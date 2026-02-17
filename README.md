@@ -1,12 +1,23 @@
 # Ahoy-GA
 
-AI 生成資料工具：集中管理原始圖與資料集，以 **Gemini / Flux** 生成圖片、以 GPT 生成標籤，並支援裁剪、箭頭標註與標籤儲存。
+AI 生成資料工具：
+集中管理原始圖與資料集，以 **Gemini / Flux** 生成圖片、以 GPT 生成標籤，並支援裁剪、箭頭標註與標籤儲存。
 
 ## 環境需求
 
 - Python 3.x  
 - Node.js  
-- **NVIDIA Driver** 與 **CUDA**（使用 Flux 本地生成圖片時需要；僅用 Gemini 可省略）
+- **NVIDIA Driver** 與 **CUDA 12.9** 以上（使用 Flux 本地生成圖片時需要；僅用 Gemini 可省略）
+
+## 使用模型
+
+| 用途 | 模型 | 說明 |
+|------|------|------|
+| 圖片生成（雲端） | **Google Gemini**（`gemini-3-pro-image-preview`） | 依提示詞與參考圖生成 4K、16:9 圖片，需 `GOOGLE_API_KEY`。 |
+| 圖片生成（本地） | **FLUX.2-klein**（Black Forest Labs） | 依顯存自動選 9B 或 4B，需 CUDA、本地 GPU。 |
+| 標籤生成 | **OpenAI GPT**（`gpt-5.2-2025-12-11`） | 依圖片與提示詞生成文字標籤，需 `OPENAI_API_KEY`。 |
+
+Generate 頁面可切換 **Gemini** 或 **Flux** 作為圖片生成來源；標籤（Tag）功能固定使用 GPT 或是人為標註。
 
 ## 安裝與執行
 
@@ -18,14 +29,13 @@ AI 生成資料工具：集中管理原始圖與資料集，以 **Gemini / Flux*
 python run.py
 ```
 
-適用 Linux 與 Windows。結束時在終端按 `Ctrl+C` 會一併關閉前後端。  
-（首次請先依下方「後端」「前端」完成 `pip install`、`npm install`。）
+首次請先依下方「後端」「前端」完成 `pip install`、`npm install`。
 
 ### 1. 後端
 
 ```bash
 cd back-end
-pip install -r ../requirement.txt
+pip install -r requirement.txt
 ```
 
 在專案根目錄建立 `.env`，並設定 API 金鑰：
@@ -39,13 +49,14 @@ OPENAI_API_KEY=你的_OpenAI_API_金鑰
 
 ```bash
 cd back-end
-python main.py
+python api.py
 ```
 
 或使用 uvicorn：
 
 ```bash
-uvicorn main:app --reload --port 8000
+cd back-end
+uvicorn api:app --reload --port 8000
 ```
 
 ### 2. 前端
