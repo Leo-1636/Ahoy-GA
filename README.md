@@ -7,14 +7,14 @@ AI 生成資料工具：
 
 - Python 3.x  
 - Node.js  
-- **NVIDIA Driver** 與 **CUDA 12.9** 以上（使用 Flux 本地生成圖片時需要；僅用 Gemini 可省略）
+- **NVIDIA Driver** 與 **CUDA 12.9** 以上
 
 ## 使用模型與硬體需求
 
 | 用途 | 模型 | 說明 | 硬體 / VRAM |
 |------|------|------|-------------|
 | 圖片生成 <br>（雲端） | **Google Gemini** <br>（`gemini-3-pro-image-preview`） | 依提示詞與參考圖生成 4K 圖片 <br> 需 `GOOGLE_API_KEY` | 不需本地 GPU |
-| 圖片生成 <br>（本地） | **FLUX.2-klein** <br>（Black Forest Labs） | 需本地 GPU 依顯存自動選擇模型。 | **Flux 4B** 至少 8GB VRAM <br> **Flux 9B** 至少 20GB VRAM |
+| 圖片生成 <br>（本地） | **FLUX.2-klein** <br>（Black Forest Labs） | 依提示詞與參考圖生成 1K 圖片 <br> 需 CUDA | **Flux 4B** 至少 8GB VRAM <br> **Flux 9B** 至少 20GB VRAM |
 | 標籤生成 | **OpenAI GPT** <br>（`gpt-5.2-2025-12-11`） | 依圖片與提示詞生成標籤 <br> 需 `OPENAI_API_KEY` | 不需本地  GPU |
 
 Generate 頁面可切換 **Gemini** 或 **Flux** 作為圖片生成來源；標籤（Tag）功能固定使用 GPT 或人為標註。僅用 Gemini 時無須本地顯卡；使用 Flux 時程式會依目前顯存自動選擇 9B 或 4B。
