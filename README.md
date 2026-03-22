@@ -1,75 +1,79 @@
 # Ahoy-GA
 
-AI 生成資料工具：  
-集中管理原始圖與資料集，以 **Gemini / Flux** 生成圖片、以 GPT 生成標籤，並支援裁剪、箭頭標註與標籤儲存。
+## Introduction
 
-## 環境需求
+Ahoy-GA is a training data generation and processing tool. It generates training images using **Gemini (Nano Banana)** and **FLUX**, and provides AI caption generation, cropping, arrow annotation, and other data processing features to support downstream Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL).
 
-- Python 3.x  
-- Node.js  
-- **NVIDIA Driver** 與 **CUDA 12.9** 以上  
-  [NVIDIA Driver](https://www.nvidia.com/drivers/) · [NVIDIA CUDA](https://developer.nvidia.com/cuda-downloads/)
+---
 
-## 使用模型與硬體需求
+## Features
 
-| 用途 | 模型 | 說明 | 硬體 / VRAM |
-|------|------|------|-------------|
-| 圖片生成 <br>（雲端） | **Google NanoBanana Pro** <br>（`gemini-3-pro-image-preview`） | 依提示詞與參考圖生成 4K 圖片 <br> 需 `GOOGLE_API_KEY` | 不需本地 GPU |
-| 圖片生成 <br>（本地） | **FLUX.2-klein** <br>（Black Forest Labs） | 依提示詞與參考圖生成 1K 圖片 <br> 需 CUDA | **Flux 4B** 至少 8GB VRAM <br> **Flux 9B** 至少 20GB VRAM |
-| 標籤生成 | **OpenAI GPT** <br>（`gpt-5.2-2025-12-11`） | 依圖片與提示詞生成標籤 <br> 需 `OPENAI_API_KEY` | 不需本地  GPU |
+- **Image Generation**: Generate training images using Gemini (Nano Banana Pro / 2) or FLUX.2-klein (4B / 9B)
+- **Caption Generation**: Automatically generate text captions for images using Gemini 3 Flash or GPT-5.4 / GPT-5.4 Mini
+- **Crop**: Select a region on the image to crop and save to the dataset
+- **Arrow Annotation**: Draw colored arrows on images to highlight areas of interest
+- **Dataset Management**: Manage original images (`original/`) and datasets (`datasets/`) with batch delete support
+- **Appearance Settings**: Customize the UI accent color; preferences are saved in browser localStorage
 
-Generate Image 可切換 **Gemini** 或 **Flux** 作為圖片生成來源；Tag 功能可以選擇使用 **GPT** 或人為標註。  
-僅用 Gemini 時無須本地 GPU；使用 Flux 時程式會依目前顯存自動選擇 9B 或 4B 模型。
+---
 
-### 實測效果
-單張生成時間，僅供參考：
-| 環境 | 約略耗時 |
-|------|----------|
-| Gemini NanoBanana Pro  | 約 30 秒 |
-| RTX 4090 + Flux.2-klein 9B | 約 16 秒 |
-| RTX 4060 筆電 + Flux.2-klein 4B | 約 260 秒 |
+## Model & Hardware Requirements
 
-## 安裝與執行
+### Image Generation Models
 
-### 快速啟動（前端 + 後端）
+| Model | Provider | Execution | Requirements |
+|-------|----------|-----------|--------------|
+| **Nano Banana Pro** | Google Gemini | Cloud | Gemini API Key |
+| **Nano Banana 2** | Google Gemini | Cloud | Gemini API Key |
+| **FLUX.2-klein 4B** | Black Forest Labs | Local | GPU + CUDA |
+| **FLUX.2-klein 9B** | Black Forest Labs | Local | GPU + CUDA |
 
-在專案根目錄執行下列指令，會同時啟動後端（port 8000）與前端開發伺服器：
+### Caption Generation Models
+
+| Model | Provider | Requirements |
+|-------|----------|--------------|
+| **Gemini 3 Flash** | Google | Gemini API Key |
+| **GPT-5.4** | OpenAI | ChatGPT API Key |
+| **GPT-5.4 Mini** | OpenAI | ChatGPT API Key |
+
+### Recommended GPU Setup (FLUX)
+
+| Model | Resolution | Aspect Ratio | VRAM Usage | Recommended GPU |
+|-------|-----------|--------------|------------|-----------------|
+| FLUX.2-klein 4B | 1K | 1:1 | ~7.5 GB | RTX 4060 or above |
+| FLUX.2-klein 4B | 2K | 1:1 | ~14.2 GB | RTX 4080 or above |
+| FLUX.2-klein 9B | 1K | 1:1 | ~18.5 GB | RTX 4090 or above |
+
+> **Note**: FLUX inference runs locally. If an OOM error occurs, the system automatically catches the exception and returns HTTP 503 without affecting the FastAPI process.
+
+---
+
+## Installation & Setup
+
+### Create Environment (Conda)
 
 ```bash
-python main.py
+conda create --name Ahoy-GA python=3.13
+conda activate Ahoy-GA
+conda install cuda -c nvidia
 ```
 
-首次請先依下方「後端」「前端」完成 `pip install`、`npm install`。
-
-### 1. 後端
+### 1. Back-end
 
 ```bash
 cd back-end
 pip install -r requirement.txt
-```
-
-在專案根目錄建立 `.env`，並設定 API 金鑰：
-
-```env
-GOOGLE_API_KEY=你的_Google_API_金鑰
-OPENAI_API_KEY=你的_OpenAI_API_金鑰
-```
-
-啟動後端：
-
-```bash
-cd back-end
 python api.py
 ```
 
-或使用 uvicorn：
+Or using uvicorn:
 
 ```bash
 cd back-end
 uvicorn api:app --reload --port 8000
 ```
 
-### 2. 前端
+### 2. Front-end
 
 ```bash
 cd front-end
@@ -77,13 +81,46 @@ npm install
 npm run dev
 ```
 
-### 3. 儲存目錄
+The front-end runs at `http://localhost:5173` by default. API requests are proxied to the back-end at `http://localhost:8000` via Vite proxy.
 
-後端會使用 `back-end/storage/` 下的目錄：
+### 3. API Key Configuration
 
-- `storage/originals/`：原始圖片（.png）
-- `storage/datasets/`：資料集圖片與對應標籤（.png + .txt）
+After starting the app, go to the **Settings page** (`/settings`) and enter your keys under the **API Keys** section:
 
-## 授權
+- `Gemini API Key`: Used for Nano Banana image generation and Gemini caption generation
+- `ChatGPT API Key`: Used for GPT caption generation
 
-專案為私人使用，未另行聲明授權條款。
+> API Keys are stored in back-end memory and must be re-entered after restarting the server.
+
+---
+
+## Project Structure
+
+```
+Ahoy-GA/
+├── back-end/
+│   ├── api.py              # FastAPI main application
+│   ├── config.py           # Model names and path configuration
+│   ├── clients/
+│   │   ├── flux.py         # FLUX local inference client
+│   │   ├── gemini.py       # Gemini image generation client
+│   │   ├── gpt.py          # GPT text generation client
+│   │   └── message.py      # Message format utilities
+│   └── utils/
+│       ├── image_util.py   # Image open, save, arrow drawing
+│       ├── path_util.py    # Path resolution utilities
+│       └── status_util.py  # GPU / CPU status query
+├── front-end/
+│   └── src/
+│       ├── App.tsx         # Main page (image management, generation, editing)
+│       └── Settings.tsx    # Settings page (API Keys, appearance)
+└── storage/
+    ├── original/           # Original generated images (.png)
+    └── datasets/           # Dataset images and captions (.png + .txt)
+```
+
+---
+
+## License
+
+This project is for private use. No license has been declared.
