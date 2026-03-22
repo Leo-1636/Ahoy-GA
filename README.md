@@ -2,15 +2,15 @@
 
 ## Introduction
 
-Ahoy-GA is a training data generation and processing tool. It generates training images using **Gemini (Nano Banana)** and **FLUX**, and provides AI caption generation, cropping, arrow annotation, and other data processing features to support downstream Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL).
+Ahoy-GA is a training data generation and processing tool. It generates training images using **Gemini (Nano Banana)** and **FLUX**, and provides AI caption generation, cropping, arrow annotation, and other data processing features to support downstream SFT and RL.
 
 ---
 
 ## Features
 
-- **Image Generation**: Generate training images using Gemini (Nano Banana Pro / 2) or FLUX.2-klein (4B / 9B)
-- **Caption Generation**: Automatically generate text captions for images using Gemini 3 Flash or GPT-5.4 / GPT-5.4 Mini
-- **Crop**: Select a region on the image to crop and save to the dataset
+- **Image Generation**: Generate training images using Gemini or FLUX.2-klein
+- **Caption Generation**: Automatically generate text captions for images using Gemini 3 or GPT-5.4
+- **Image Crop**: Select a region on the image to crop and save to the dataset
 - **Arrow Annotation**: Draw colored arrows on images to highlight areas of interest
 - **Dataset Management**: Manage original images (`original/`) and datasets (`datasets/`) with batch delete support
 - **Appearance Settings**: Customize the UI accent color; preferences are saved in browser localStorage
@@ -28,7 +28,7 @@ Ahoy-GA is a training data generation and processing tool. It generates training
 | **FLUX.2-klein 4B** | Black Forest Labs | Local | GPU + CUDA |
 | **FLUX.2-klein 9B** | Black Forest Labs | Local | GPU + CUDA |
 
-### Caption Generation Models
+### Tag Generation Models
 
 | Model | Provider | Requirements |
 |-------|----------|--------------|
@@ -36,13 +36,13 @@ Ahoy-GA is a training data generation and processing tool. It generates training
 | **GPT-5.4** | OpenAI | ChatGPT API Key |
 | **GPT-5.4 Mini** | OpenAI | ChatGPT API Key |
 
-### Recommended GPU Setup (FLUX)
+### Recommended GPU Setup
 
-| Model | Resolution | Aspect Ratio | VRAM Usage | Recommended GPU |
-|-------|-----------|--------------|------------|-----------------|
-| FLUX.2-klein 4B | 1K | 1:1 | ~7.5 GB | RTX 4060 or above |
-| FLUX.2-klein 4B | 2K | 1:1 | ~14.2 GB | RTX 4080 or above |
-| FLUX.2-klein 9B | 1K | 1:1 | ~18.5 GB | RTX 4090 or above |
+| Model | Resolution |  VRAM Usage | Recommended GPU |
+|-------|------------|-------------|----------------|
+| FLUX.2-klein 4B | 1K | ~7.5 GB  | RTX 4060 or above |
+| FLUX.2-klein 4B | 2K | ~14.2 GB | RTX 4080 or above |
+| FLUX.2-klein 9B | 1K | ~18.5 GB | RTX 4090 or above |
 
 > **Note**: FLUX inference runs locally. If an OOM error occurs, the system automatically catches the exception and returns HTTP 503 without affecting the FastAPI process.
 
@@ -112,8 +112,8 @@ Ahoy-GA/
 │       └── status_util.py  # GPU / CPU status query
 ├── front-end/
 │   └── src/
-│       ├── App.tsx         # Main page (image management, generation, editing)
-│       └── Settings.tsx    # Settings page (API Keys, appearance)
+│       ├── App.tsx         # Main page
+│       └── Settings.tsx    # Settings page 
 └── storage/
     ├── original/           # Original generated images (.png)
     └── datasets/           # Dataset images and captions (.png + .txt)
