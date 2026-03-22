@@ -3,37 +3,28 @@ from diffusers import Flux2KleinPipeline
 
 class ChatFLUX:
     def __init__(self, model: str, resolution: str, aspect_ratio: str):
-        self.dtype = torch.bfloat16
+        self.dtype  = torch.bfloat16
         self.device = "cuda"
         self.config = image_config(resolution, aspect_ratio)
 
         self.pipeline = Flux2KleinPipeline.from_pretrained(
-            model, 
+            model,
             torch_dtype = self.dtype,
         )
         self.pipeline.enable_model_cpu_offload()
-        
-    def chat_image(self, system_prompt: str, user_prompt: str, image_prompts: list):
 
-        if image_prompts != []:
-            image = self.pipeline(
-                prompt = f"{system_prompt} {user_prompt}",
-                image = image_prompts,
-                height = self.config.height,
-                width = self.config.width,
-                guidance_scale = 1.0,
-                num_inference_steps = 4,
-                generator = torch.Generator(device = self.device).manual_seed(0)
-            ).images[0]
-        else:
-            image = self.pipeline(
-                prompt = f"{system_prompt} {user_prompt}",
-                height = self.config.height,
-                width = self.config.width,
-                guidance_scale = 1.0,
-                num_inference_steps = 4,
-                generator = torch.Generator(device = self.device).manual_seed(0)
-            ).images[0]
+    def chat_image(self, system_prompt: str, user_prompt: str, image_prompts: list):
+        optional = {"image": image_prompts} if image_prompts else {}
+
+        image = self.pipeline(
+            prompt              = f"{system_prompt} {user_prompt}",
+            height              = self.config.height,
+            width               = self.config.width,
+            guidance_scale      = 1.0,
+            num_inference_steps = 4,
+            generator           = torch.Generator(device = self.device).manual_seed(0),
+            **optional,
+        ).images[0]
 
         return image
 
