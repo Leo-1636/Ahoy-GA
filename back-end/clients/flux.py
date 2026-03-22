@@ -14,6 +14,7 @@ class ChatFLUX:
         self.pipeline.enable_model_cpu_offload()
         
     def chat_image(self, system_prompt: str, user_prompt: str, image_prompts: list):
+        
         image = self.pipeline(
             prompt = f"{system_prompt} {user_prompt}",
             image = image_prompts,

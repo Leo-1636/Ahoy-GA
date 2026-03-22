@@ -10,4 +10,5 @@ numpy
 Pillow
 python-multipart
 torch --index-url https://download.pytorch.org/whl/cu129
+transformers
 uvicorn

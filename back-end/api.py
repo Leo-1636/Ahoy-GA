@@ -10,9 +10,6 @@ from clients.gemini import ChatGemini
 from clients.gpt import ChatGPT
 from clients.flux import ChatFLUX
 
-# FLUX 推理互斥鎖：同時只允許一個請求使用 GPU，避免並發 OOM
-_flux_lock = asyncio.Lock()
-
 from config import root_path, image_model, set_api_key
 from utils import image_util, path_util, status_util
 
@@ -132,6 +129,8 @@ async def generate_image_endpoint(
     for image_prompt in image_prompts:
         contents = await image_prompt.read()
         image_list.append(image_util.open_bytes(contents))
+    if not image_list:
+        image_list = None
 
     if model in [image_model.nano_banana_2, image_model.nano_banana_pro]:
         client = ChatGemini(
@@ -145,29 +144,16 @@ async def generate_image_endpoint(
             image_prompts = image_list
         )
     elif model in [image_model.flux2_klein_4b, image_model.flux2_klein_9b]:
-        # 互斥鎖確保同時只有一個 FLUX 請求佔用 GPU
-        if _flux_lock.locked():
-            raise HTTPException(status_code = 503, detail = "GPU 正忙碌中，請稍後再試")
-
-        try:
-            async with _flux_lock:
-                client = ChatFLUX(
-                    model        = model,
-                    resolution   = resolution,
-                    aspect_ratio = aspect_ratio,
-                )
-                # 用 asyncio.to_thread 在獨立執行緒執行阻塞推理，
-                # 避免凍結 FastAPI event loop
-                image = await asyncio.to_thread(
-                    client.chat_image,
-                    system_prompt,
-                    user_prompt,
-                    image_list,
-                )
-        except RuntimeError as e:
-            # flux.py 偵測到 OOM 後拋出 RuntimeError，轉為 HTTP 503
-            raise HTTPException(status_code = 503, detail = str(e))
-
+        client = ChatFLUX(
+            model        = model,
+            resolution   = resolution,
+            aspect_ratio = aspect_ratio,
+        )
+        image = client.chat_image(
+            system_prompt = system_prompt,
+            user_prompt = user_prompt,
+            image_prompts = image_list
+        )
     image_path = root_path.original / f"{path_util.generate_uuid()}.png"
     image_util.save_image(image = image, path = image_path)
 
