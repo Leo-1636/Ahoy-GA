@@ -17,6 +17,14 @@ Ahoy-GA is a training data generation and processing tool. It generates training
 
 ---
 
+## Upcoming
+
+- **Batch Image Generation**: Generate multiple images in a single request using a list of prompts
+- **Token Usage Display**: Show the number of tokens consumed per generation request
+- **Cost Estimation**: Display estimated API cost based on model pricing and token usage
+
+---
+
 ## Model & Hardware Requirements
 
 ### Image Generation Models
@@ -28,10 +36,11 @@ Ahoy-GA is a training data generation and processing tool. It generates training
 | **FLUX.2-klein 4B** | Black Forest Labs | Local | GPU + CUDA |
 | **FLUX.2-klein 9B** | Black Forest Labs | Local | GPU + CUDA |
 
-### Tag Generation Models
+### Caption Generation Models
 
 | Model | Provider | Requirements |
 |-------|----------|--------------|
+| **Human** | You | Your Brain and Hand |
 | **Gemini 3 Flash** | Google | Gemini API Key |
 | **GPT-5.4** | OpenAI | ChatGPT API Key |
 | **GPT-5.4 Mini** | OpenAI | ChatGPT API Key |
