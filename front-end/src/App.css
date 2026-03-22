@@ -1,3 +1,17 @@
+/* ==========================================
+   App.css — 主應用程式樣式
+   結構：
+   - 全域重置
+   - 主版面配置（三欄 flex）
+   - 左側邊欄（圖片列表）
+   - 中間主內容區（圖片預覽 + 操作）
+   - 右側功能面板（分頁：Image / Edit / Tag）
+   - 各功能面板內部元件
+   - 通用元件（按鈕、下拉、確認框…）
+   - 捲動條樣式
+   ========================================== */
+
+/* ── 全域重置 ── */
 * {
   margin: 0;
   padding: 0;
@@ -11,6 +25,7 @@ body {
   font-size: 12px;
 }
 
+/* ── 三欄主版面 ── */
 .app-container {
   display: flex;
   height: 100vh;
@@ -154,7 +169,7 @@ body {
 
 .file-item.selected {
   background-color: #1a1a1a;
-  border-left-color: #fff;
+  border-left-color: var(--accent);
 }
 
 .file-item.checked {
@@ -212,21 +227,46 @@ body {
   color: #ccc;
 }
 
-.refresh-btn {
-  margin: auto 12px 12px;
-  padding: 6px 12px;
+/* ==================== 左側邊欄底部 footer ==================== */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 10px 12px;
+  display: flex;
+  gap: 6px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.footer-btn {
+  flex: 1;
+  padding: 6px 8px;
   background-color: #1a1a1a;
-  color: #888;
-  border: 1px solid #333;
+  border: 1px solid #282828;
   border-radius: 4px;
   cursor: pointer;
   font-size: 10px;
   transition: all 0.15s ease;
+  text-align: center;
+}
+
+.refresh-btn {
+  color: #888;
 }
 
 .refresh-btn:hover {
   background-color: #222;
   color: #fff;
+  border-color: #444;
+}
+
+.settings-btn {
+  color: #666;
+  font-size: 13px;
+  flex: 0 0 32px;
+}
+
+.settings-btn:hover {
+  background-color: #222;
+  color: #ccc;
   border-color: #444;
 }
 
@@ -334,12 +374,12 @@ body {
 }
 
 .confirm-buttons button:first-child {
-  background-color: #fff;
-  color: #000;
+  background-color: var(--accent);
+  color: #0a0a0a;
 }
 
 .confirm-buttons button:first-child:hover {
-  background-color: #ddd;
+  filter: brightness(0.85);
 }
 
 .confirm-buttons button:last-child {
@@ -391,8 +431,8 @@ body {
 }
 
 .tab.active {
-  color: #fff;
-  border-bottom-color: #fff;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .tab-content {
@@ -408,36 +448,149 @@ body {
   gap: 12px;
 }
 
-/* 模型選擇 */
-.model-toggle {
+/* 模型選擇下拉 */
+.select-wrapper {
+  position: relative;
   display: flex;
+  align-items: center;
+}
+
+.model-select {
+  width: 100%;
+  padding: 7px 28px 7px 10px;
+  background-color: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.model-select:hover {
+  border-color: #444;
+}
+
+.model-select:focus {
+  border-color: #555;
+}
+
+.model-select option {
+  background-color: #111;
+  color: #ccc;
+}
+
+.model-select optgroup {
+  color: #555;
+  font-size: 10px;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 9px;
+  font-size: 10px;
+  color: #444;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* Resolution & Aspect Ratio 並排列 */
+.config-row {
+  display: flex;
+  gap: 8px;
+}
+
+.config-row .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 系統狀態區塊 */
+.status-block {
+  background-color: #0d0d0d;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
 
-.model-btn {
-  flex: 1;
-  padding: 8px 12px;
-  background-color: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #666;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  font-size: 9px;
+  font-weight: 600;
   letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
-.model-btn:hover {
-  border-color: #555;
+.status-badge.gpu {
+  background-color: rgba(78, 204, 163, 0.15);
+  color: #4ecca3;
+  border: 1px solid rgba(78, 204, 163, 0.3);
+}
+
+.status-badge.cpu {
+  background-color: rgba(180, 180, 180, 0.1);
   color: #888;
+  border: 1px solid #333;
 }
 
-.model-btn.active {
-  background-color: #fff;
-  border-color: #fff;
-  color: #000;
-  font-weight: 500;
+.status-device {
+  font-size: 10px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-mem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-mem-label {
+  font-size: 9px;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  width: 32px;
+}
+
+.status-mem-bar-wrap {
+  flex: 1;
+  height: 3px;
+  background-color: #1e1e1e;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.status-mem-bar {
+  height: 100%;
+  background-color: #4ecca3;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.status-mem-text {
+  font-size: 9px;
+  color: #555;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .form-group {
@@ -448,9 +601,10 @@ body {
 
 .form-group label {
   font-size: 10px;
+  font-weight: 600;
   color: #555;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .form-group textarea {
@@ -576,24 +730,44 @@ body {
 .generate-btn {
   width: 100%;
   padding: 10px;
-  background-color: #fff;
-  color: #000;
+  background-color: var(--accent);
+  color: #0a0a0a;
   border: none;
   border-radius: 4px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   margin-top: 4px;
 }
 
 .generate-btn:hover {
-  background-color: #ddd;
+  filter: brightness(0.85);
 }
 
 .generate-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.required-mark {
+  color: #c53030;
+  font-size: 11px;
+  margin-left: 2px;
+}
+
+.form-group textarea.input-error {
+  border-color: #c53030;
+}
+
+.generate-error {
+  padding: 7px 10px;
+  background-color: rgba(197, 48, 48, 0.1);
+  border: 1px solid rgba(197, 48, 48, 0.3);
+  border-radius: 4px;
+  color: #fc8181;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 /* 切割圖片面板 */
@@ -603,19 +777,20 @@ body {
   gap: 12px;
 }
 
-.cut-panel h3 {
-  color: #888;
-  font-size: 11px;
-  font-weight: 500;
+/* 統一 panel 內所有區塊標籤 */
+.panel-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .cut-panel .info {
-  color: #4ecca3;
+  color: #e0e0e0;
   font-size: 11px;
   padding: 8px;
-  background-color: rgba(78, 204, 163, 0.1);
+  background-color: rgba(255, 255, 255, 0.06);
   border-radius: 4px;
   word-break: break-all;
 }
@@ -635,15 +810,16 @@ body {
 }
 
 .selection-info {
-  padding: 8px;
-  background-color: #1a1a1a;
-  border-radius: 4px;
-  font-size: 10px;
-  color: #888;
+  display: flex;
+  justify-content: space-around;
+  font-size: 11px;
+  color: #fff;
+  padding: 8px 0;
 }
 
-.selection-info p {
-  margin-bottom: 2px;
+.selection-info span {
+  flex: 1;
+  text-align: center;
 }
 
 /* 標籤生成面板 */
@@ -653,19 +829,12 @@ body {
   gap: 12px;
 }
 
-.tag-panel h3 {
-  color: #888;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
 
 .tag-panel .info {
-  color: #4ecca3;
+  color: #e0e0e0;
   font-size: 11px;
   padding: 8px;
-  background-color: rgba(78, 204, 163, 0.1);
+  background-color: rgba(255, 255, 255, 0.06);
   border-radius: 4px;
   word-break: break-all;
 }
@@ -716,9 +885,10 @@ body {
 
 .edit-mode-toggle label {
   font-size: 10px;
-  color: #888;
+  font-weight: 600;
+  color: #555;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .edit-mode-toggle .toggle-buttons {
@@ -744,9 +914,32 @@ body {
 }
 
 .edit-mode-toggle .toggle-btn.active {
-  background-color: #4ecca3;
-  border-color: #4ecca3;
+  background-color: var(--accent);
+  border-color: var(--accent);
   color: #0a0a0a;
+}
+
+/* Panel 內嵌確認框（非絕對定位） */
+.panel-confirm {
+  background-color: #111;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-confirm-info {
+  display: flex;
+  justify-content: space-around;
+  font-size: 11px;
+  color: #fff;
+}
+
+.panel-confirm-info span {
+  flex: 1;
+  text-align: center;
 }
 
 /* 裁切區塊 */
@@ -773,12 +966,61 @@ body {
   color: #888;
 }
 
+.arrow-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arrow-color-label {
+  font-size: 11px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.arrow-color-swatch-wrap {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.arrow-color-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.arrow-color-swatch-wrap:hover .arrow-color-dot {
+  border-color: rgba(255,255,255,0.4);
+  transform: scale(1.15);
+}
+
+.arrow-color-picker-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.arrow-color-hex {
+  font-size: 10px;
+  color: #555;
+  font-family: monospace;
+  letter-spacing: 0.03em;
+}
+
 .arrow-status {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 10px;
-  color: #4ecca3;
+  color: #e0e0e0;
 }
 
 .arrow-status-row {
@@ -859,9 +1101,10 @@ body {
 
 .tag-mode-toggle label {
   font-size: 10px;
-  color: #888;
+  font-weight: 600;
+  color: #555;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .toggle-buttons {
@@ -887,8 +1130,8 @@ body {
 }
 
 .toggle-btn.active {
-  background-color: #4ecca3;
-  border-color: #4ecca3;
+  background-color: var(--accent);
+  border-color: var(--accent);
   color: #0a0a0a;
 }
 
@@ -909,4 +1152,184 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #333;
+}
+
+/* ==================== 面板調整大小把手 ==================== */
+.resize-handle {
+  width: 4px;
+  min-width: 4px;
+  background-color: transparent;
+  cursor: col-resize;
+  transition: background-color 0.15s ease;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background-color: #333;
+}
+
+/* ==================== 設定 Modal ==================== */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.settings-modal {
+  background-color: #111;
+  border: 1px solid #222;
+  border-radius: 8px;
+  width: 380px;
+  max-width: 90vw;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #1e1e1e;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-close-btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.settings-close-btn:hover {
+  color: #fff;
+}
+
+.settings-section {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-divider {
+  height: 1px;
+  background-color: #1a1a1a;
+  margin: 0 16px;
+}
+
+.settings-label {
+  font-size: 10px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.settings-path-row {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-input {
+  flex: 1;
+  padding: 7px 10px;
+  background-color: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+
+.settings-input:focus {
+  border-color: #444;
+}
+
+.settings-input::placeholder {
+  color: #333;
+}
+
+.settings-browse-btn {
+  padding: 6px 12px;
+  background-color: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #888;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.settings-browse-btn:hover {
+  background-color: #252525;
+  color: #ccc;
+  border-color: #444;
+}
+
+.settings-key-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-key-label {
+  font-size: 10px;
+  color: #444;
+  width: 48px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.settings-save-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.settings-save-btn {
+  padding: 6px 16px;
+  background-color: #fff;
+  border: none;
+  border-radius: 4px;
+  color: #000;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.settings-save-btn:hover:not(:disabled) {
+  background-color: #ddd;
+}
+
+.settings-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './App.css'
 
 /**
@@ -58,15 +59,20 @@ function App() {
   // 生成圖片相關狀態
   const [systemPrompt, setSystemPrompt] = useState('')
   const [userPrompt, setUserPrompt] = useState('')
-  const [selectedModel, setSelectedModel] = useState<'gemini' | 'flux'>('gemini')
+  const [generateError, setGenerateError] = useState('')
+  const [selectedModel, setSelectedModel] = useState('gemini-3.1-flash-image-preview')
+  const [selectedResolution, setSelectedResolution] = useState('1K')
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState('1:1')
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]) // 原始 File 物件
   const [previewUrls, setPreviewUrls] = useState<string[]>([])    // 用於預覽的 Blob URLs
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // 系統狀態
+  const [systemStatus, setSystemStatus] = useState<Record<string, string> | null>(null)
   
   // 裁切圖片相關狀態
   const [isDrawing, setIsDrawing] = useState(false)
   const [selection, setSelection] = useState<SelectionBox | null>(null)
-  const [showConfirm, setShowConfirm] = useState(false)
   const [isCutting, setIsCutting] = useState(false)
   
   // 標籤生成相關狀態
@@ -75,16 +81,33 @@ function App() {
   const [generatedTag, setGeneratedTag] = useState('')
   const [isGeneratingTag, setIsGeneratingTag] = useState(false)
   const [isManualTagMode, setIsManualTagMode] = useState(false)
+  const [tagModel, setTagModel] = useState('gemini-3-flash-preview')
   const [manualTag, setManualTag] = useState('')
   
   // 箭頭繪製相關狀態
   const [arrowStart, setArrowStart] = useState<{ x: number; y: number } | null>(null)
   const [arrowEnd, setArrowEnd] = useState<{ x: number; y: number } | null>(null)
   const [isSavingArrow, setIsSavingArrow] = useState(false)
+  const [arrowColor, setArrowColor] = useState('#ff0000')
   
   // 編輯模式切換 (crop 或 arrow)
   const [editMode, setEditMode] = useState<'crop' | 'arrow'>('crop')
-  
+
+  const navigate = useNavigate()
+
+  // 載入偏好設定 accent 顏色
+  useEffect(() => {
+    const saved = localStorage.getItem('accent-color')
+    if (saved) document.documentElement.style.setProperty('--accent', saved)
+  }, [])
+
+  // 面板寬度調整
+  const [sidebarWidth, setSidebarWidth] = useState(180)
+  const [panelWidth, setPanelWidth] = useState(240)
+  const sidebarDrag = useRef({ active: false, startX: 0, startWidth: 180 })
+  const panelDrag = useRef({ active: false, startX: 0, startWidth: 240 })
+
+
   // DOM 引用
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
@@ -98,16 +121,65 @@ function App() {
     try {
       const response = await fetch('/api/images')
       const data = await response.json()
-      setImages(data)
+      const toImageFile = (items: { path: string; hasTag: boolean }[]) =>
+        (items ?? []).map(item => ({
+          name: item.path.split('/').pop() ?? item.path,
+          path: item.path,
+          hasTag: item.hasTag ?? false,
+        }))
+      setImages({
+        originals: toImageFile(data.original ?? []),
+        datasets: toImageFile(data.datasets ?? []),
+      })
     } catch (error) {
       console.error('Failed to fetch images:', error)
+    }
+  }, [])
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/status')
+      const data = await response.json()
+      setSystemStatus(data)
+    } catch (error) {
+      console.error('Failed to fetch status:', error)
     }
   }, [])
 
   // 初始化載入
   useEffect(() => {
     fetchImages()
-  }, [fetchImages])
+    fetchStatus()
+  }, [fetchImages, fetchStatus])
+
+  // 面板拖曳調整寬度
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (sidebarDrag.current.active) {
+        const delta = e.clientX - sidebarDrag.current.startX
+        setSidebarWidth(Math.max(140, Math.min(380, sidebarDrag.current.startWidth + delta)))
+      }
+      if (panelDrag.current.active) {
+        const delta = e.clientX - panelDrag.current.startX
+        setPanelWidth(Math.max(200, Math.min(440, panelDrag.current.startWidth - delta)))
+      }
+    }
+    const onMouseUp = () => {
+      if (sidebarDrag.current.active || panelDrag.current.active) {
+        sidebarDrag.current.active = false
+        panelDrag.current.active = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    }
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [])
+
 
   // --- 事件處理常式 ---
 
@@ -130,7 +202,6 @@ function App() {
       // 一般模式：切換中間顯示的圖片
       setSelectedImage(image)
       setSelection(null)
-      setShowConfirm(false)
       // 清除箭頭狀態
       setArrowStart(null)
       setArrowEnd(null)
@@ -165,23 +236,18 @@ function App() {
     
     setIsDeleting(true)
     try {
-      const response = await fetch('/api/delete-images', {
+      const response = await fetch('/api/images/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: Array.from(selectedForDelete) })
+        body: JSON.stringify(Array.from(selectedForDelete))
       })
 
       if (response.ok) {
-        const result = await response.json()
-        // 如果當前顯示的圖片被刪除了，則清空顯示
         if (selectedImage && selectedForDelete.has(selectedImage.path)) {
           setSelectedImage(null)
         }
         await fetchImages()
         setSelectedForDelete(new Set())
-        if (result.failed.length > 0) {
-          alert(`已刪除 ${result.deleted.length} 個，${result.failed.length} 個刪除失敗`)
-        }
       } else {
         alert('刪除失敗')
       }
@@ -259,42 +325,47 @@ function App() {
    * 呼叫 AI 生成圖片
    */
   const handleGenerate = async () => {
-    if (!systemPrompt || !userPrompt) {
-      alert('請填寫系統提示詞和使用者提示詞')
+    if (!systemPrompt.trim() || !userPrompt.trim()) {
+      setGenerateError('System Prompt 和 User Prompt 為必填')
       return
     }
-
+    setGenerateError('')
     setIsGenerating(true)
     try {
       const formData = new FormData()
       formData.append('system_prompt', systemPrompt)
       formData.append('user_prompt', userPrompt)
       formData.append('model', selectedModel)
+      formData.append('resolution', selectedResolution)
+      formData.append('aspect_ratio', selectedAspectRatio)
       referenceFiles.forEach(file => {
-        formData.append('files', file)
+        formData.append('image_prompts', file)
       })
 
-      const response = await fetch('/api/generate-image', {
+      const response = await fetch('/api/generate/image', {
         method: 'POST',
         body: formData
       })
 
       if (response.ok) {
         await fetchImages()
-        alert('圖片生成成功！')
-        // 重置表單
+        setGenerateError('')
         setSystemPrompt('')
         setUserPrompt('')
-        // 清理所有預覽 URL 以釋放記憶體
         previewUrls.forEach(url => URL.revokeObjectURL(url))
         setReferenceFiles([])
         setPreviewUrls([])
       } else {
-        alert('圖片生成失敗')
+        let errMsg = `生成失敗 (${response.status})`
+        try {
+          const errData = await response.json()
+          if (errData.detail) errMsg = errData.detail
+        } catch { /* ignore */ }
+        setGenerateError(errMsg)
       }
     } catch (error) {
       console.error('Generate error:', error)
-      alert('圖片生成失敗')
+      setGenerateError('無法連線到後端，請確認伺服器是否啟動')
     } finally {
       setIsGenerating(false)
     }
@@ -316,25 +387,28 @@ function App() {
 
     setIsGeneratingTag(true)
     try {
-      // 從伺服器獲取圖片
-      const imageResponse = await fetch(`/api/images/${selectedImage.path}`)
-      const imageBlob = await imageResponse.blob()
-
-      // 建立 FormData
       const formData = new FormData()
+      formData.append('model', tagModel)
       formData.append('system_prompt', tagSystemPrompt)
       formData.append('user_prompt', tagUserPrompt)
-      formData.append('image', imageBlob, selectedImage.name)
       formData.append('image_path', selectedImage.path)
 
-      const response = await fetch('/api/generate-text', {
+      const response = await fetch('/api/generate/text', {
         method: 'POST',
         body: formData
       })
 
       if (response.ok) {
-        const text = await response.text()
-        setGeneratedTag(text)
+        const data = await response.json()
+        const tagText = data.text ?? ''
+        setGeneratedTag(tagText)
+
+        // 自動儲存 tag 到 txt 檔案
+        const params = new URLSearchParams({
+          image_path: selectedImage.path,
+          tag_content: tagText,
+        })
+        await fetch(`/api/images/tag?${params}`, { method: 'POST' })
         alert('標籤生成成功！已儲存為 txt 檔案')
       } else {
         alert('標籤生成失敗')
@@ -362,14 +436,11 @@ function App() {
     }
 
     try {
-      const response = await fetch('/api/save-tag', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_path: selectedImage.path,
-          tag_content: manualTag
-        })
+      const params = new URLSearchParams({
+        image_path: selectedImage.path,
+        tag_content: manualTag,
       })
+      const response = await fetch(`/api/images/tag?${params}`, { method: 'POST' })
 
       if (response.ok) {
         setGeneratedTag(manualTag)
@@ -441,23 +512,21 @@ function App() {
 
     setIsSavingArrow(true)
     try {
-      const response = await fetch('/api/save-arrow-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_path: selectedImage.path,
-          start_x: arrowStart.x,
-          start_y: arrowStart.y,
-          end_x: arrowEnd.x,
-          end_y: arrowEnd.y
-        })
+      const params = new URLSearchParams({
+        image_path: selectedImage.path,
+        start_x: arrowStart.x.toString(),
+        start_y: arrowStart.y.toString(),
+        end_x: arrowEnd.x.toString(),
+        end_y: arrowEnd.y.toString(),
+        color: arrowColor,
       })
+      const response = await fetch(`/api/images/arrow?${params}`, { method: 'POST' })
 
       if (response.ok) {
         clearArrow()
         
         // 判斷來源資料夾
-        const isFromOriginals = selectedImage.path.startsWith('originals/')
+        const isFromOriginals = selectedImage.path.startsWith('original/')
         
         if (isFromOriginals) {
           // 來自 originals，新檔案已儲存到 datasets
@@ -513,7 +582,6 @@ function App() {
     if (!coords) return
     
     setIsDrawing(true)
-    setShowConfirm(false)
     setSelection({
       startX: coords.x,
       startY: coords.y,
@@ -550,7 +618,7 @@ function App() {
       const height = Math.abs(selection.endY - selection.startY)
       // 只有選取範圍夠大才顯示確認按鈕
       if (width > 10 && height > 10) {
-        setShowConfirm(true)
+        // selection 已設定，confirm-dialog 會自動顯示
       } else {
         setSelection(null)
       }
@@ -576,23 +644,19 @@ function App() {
       const width = Math.abs(selection.endX - selection.startX) * scaleX
       const height = Math.abs(selection.endY - selection.startY) * scaleY
 
-      const response = await fetch('/api/cut-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_path: selectedImage.path,
-          x: Math.round(x),
-          y: Math.round(y),
-          width: Math.round(width),
-          height: Math.round(height)
-        })
+      const params = new URLSearchParams({
+        image_path: selectedImage.path,
+        x: Math.round(x).toString(),
+        y: Math.round(y).toString(),
+        width: Math.round(width).toString(),
+        height: Math.round(height).toString(),
       })
+      const response = await fetch(`/api/images/cut?${params}`, { method: 'POST' })
 
       if (response.ok) {
         await fetchImages()
         alert('圖片切割成功！')
         setSelection(null)
-        setShowConfirm(false)
       } else {
         alert('圖片切割失敗')
       }
@@ -609,7 +673,6 @@ function App() {
    */
   const handleCancelCut = () => {
     setSelection(null)
-    setShowConfirm(false)
   }
 
   /**
@@ -673,7 +736,7 @@ function App() {
   return (
     <div className="app-container">
       {/* 左側 - 檔案空間邊欄 */}
-      <aside className="sidebar">
+      <aside className="sidebar" style={{ width: sidebarWidth, minWidth: sidebarWidth }}>
         <div className="sidebar-header">
           <span>Files</span>
           <button 
@@ -728,8 +791,21 @@ function App() {
           </div>
         </div>
         
-        <button className="refresh-btn" onClick={fetchImages}>Refresh</button>
+        <div className="sidebar-footer">
+          <button className="footer-btn settings-btn" onClick={() => navigate('/settings')}>⚙</button>
+          <button className="footer-btn refresh-btn" onClick={fetchImages}>Refresh</button>
+        </div>
       </aside>
+
+      {/* 左側拖曳調整把手 */}
+      <div
+        className="resize-handle"
+        onMouseDown={(e) => {
+          sidebarDrag.current = { active: true, startX: e.clientX, startWidth: sidebarWidth }
+          document.body.style.cursor = 'col-resize'
+          document.body.style.userSelect = 'none'
+        }}
+      />
 
       {/* 懸浮圖片預覽 (僅在非選取模式顯示) */}
       {hoveredImage && !isSelectMode && (
@@ -793,7 +869,7 @@ function App() {
                       refY="3.5"
                       orient="auto"
                     >
-                      <polygon points="0 0, 10 3.5, 0 7" fill="red" />
+                      <polygon points="0 0, 10 3.5, 0 7" fill={arrowColor} />
                     </marker>
                   </defs>
                   {/* 起點標記 */}
@@ -802,7 +878,7 @@ function App() {
                       cx={`${(arrowStart.x / imageRef.current.naturalWidth) * 100}%`}
                       cy={`${(arrowStart.y / imageRef.current.naturalHeight) * 100}%`}
                       r="6"
-                      fill="red"
+                      fill={arrowColor}
                     />
                   )}
                   {/* 箭頭線 */}
@@ -812,7 +888,7 @@ function App() {
                       y1={`${(arrowStart.y / imageRef.current.naturalHeight) * 100}%`}
                       x2={`${(arrowEnd.x / imageRef.current.naturalWidth) * 100}%`}
                       y2={`${(arrowEnd.y / imageRef.current.naturalHeight) * 100}%`}
-                      stroke="red"
+                      stroke={arrowColor}
                       strokeWidth="3"
                       markerEnd="url(#arrowhead)"
                     />
@@ -826,32 +902,52 @@ function App() {
             </div>
           )}
         </div>
-        
-        {/* 裁切確認對話框 */}
-        {showConfirm && (
+
+        {/* 裁切 / 箭頭 確認浮動視窗 */}
+        {activeTab === 'cut' && editMode === 'crop' && selection && (
           <div className="confirm-dialog">
             <p>Confirm crop this area?</p>
             <div className="confirm-buttons">
               <button onClick={handleConfirmCut} disabled={isCutting}>
                 {isCutting ? 'Processing...' : 'Confirm'}
               </button>
-              <button onClick={handleCancelCut} disabled={isCutting}>
-                Cancel
-              </button>
+              <button onClick={handleCancelCut} disabled={isCutting}>Cancel</button>
             </div>
           </div>
         )}
+        {activeTab === 'cut' && editMode === 'arrow' && arrowStart && arrowEnd && (
+          <div className="confirm-dialog">
+            <p>Save arrow to image?</p>
+            <div className="confirm-buttons">
+              <button onClick={handleSaveArrowImage} disabled={isSavingArrow}>
+                {isSavingArrow ? 'Saving...' : 'Confirm'}
+              </button>
+              <button onClick={clearArrow} disabled={isSavingArrow}>Cancel</button>
+            </div>
+          </div>
+        )}
+
       </main>
 
+      {/* 右側拖曳調整把手 */}
+      <div
+        className="resize-handle"
+        onMouseDown={(e) => {
+          panelDrag.current = { active: true, startX: e.clientX, startWidth: panelWidth }
+          document.body.style.cursor = 'col-resize'
+          document.body.style.userSelect = 'none'
+        }}
+      />
+
       {/* 右側 - 功能控制面板 */}
-      <aside className="function-panel">
+      <aside className="function-panel" style={{ width: panelWidth, minWidth: panelWidth }}>
         {/* 功能分頁切換 */}
         <div className="tabs">
           <button 
             className={`tab ${activeTab === 'generate' ? 'active' : ''}`}
             onClick={() => setActiveTab('generate')}
           >
-            Generate
+            Image
           </button>
           <button 
             className={`tab ${activeTab === 'cut' ? 'active' : ''}`}
@@ -871,46 +967,134 @@ function App() {
           {/* 分頁 1: 圖片生成 */}
           {activeTab === 'generate' && (
             <div className="generate-panel">
+              {/* Model 選擇 */}
               <div className="form-group">
-                <label>Model</label>
-                <div className="model-toggle">
-                  <button 
-                    className={`model-btn ${selectedModel === 'gemini' ? 'active' : ''}`}
-                    onClick={() => setSelectedModel('gemini')}
+                <label className="panel-section-label">Model</label>
+                <div className="select-wrapper">
+                  <select
+                    className="model-select"
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
                   >
-                    Gemini
-                  </button>
-                  <button 
-                    className={`model-btn ${selectedModel === 'flux' ? 'active' : ''}`}
-                    onClick={() => setSelectedModel('flux')}
-                  >
-                    Flux
-                  </button>
+                    <optgroup label="Gemini (Cloud)">
+                      <option value="gemini-3-pro-image-preview">
+                        Nano Banana Pro
+                      </option>
+                      <option value="gemini-3.1-flash-image-preview">
+                        Nano Banana 2
+                      </option>
+                    </optgroup>
+                    <optgroup label="FLUX (Local)">
+                      <option value="black-forest-labs/FLUX.2-klein-4B">
+                        FLUX.2 Klein 4B
+                      </option>
+                      <option value="black-forest-labs/FLUX.2-klein-9B">
+                        FLUX.2 Klein 9B
+                      </option>
+                    </optgroup>
+                  </select>
+                  <span className="select-arrow">▾</span>
                 </div>
               </div>
 
+              {/* Resolution & Aspect Ratio 並排 */}
+              <div className="config-row">
+                <div className="form-group flex-1">
+                  <label className="panel-section-label">Resolution</label>
+                  <div className="select-wrapper">
+                    <select
+                      className="model-select"
+                      value={selectedResolution}
+                      onChange={(e) => setSelectedResolution(e.target.value)}
+                    >
+                      <option value="512">512</option>
+                      <option value="1K">1K</option>
+                      <option value="2K">2K</option>
+                      <option value="4K">4K</option>
+                    </select>
+                    <span className="select-arrow">▾</span>
+                  </div>
+                </div>
+                <div className="form-group flex-1">
+                  <label className="panel-section-label">Aspect Ratio</label>
+                  <div className="select-wrapper">
+                    <select
+                      className="model-select"
+                      value={selectedAspectRatio}
+                      onChange={(e) => setSelectedAspectRatio(e.target.value)}
+                    >
+                      <option value="1:1">1 : 1</option>
+                      <option value="16:9">16 : 9</option>
+                      <option value="9:16">9 : 16</option>
+                      <option value="4:3">4 : 3</option>
+                      <option value="3:4">3 : 4</option>
+                    </select>
+                    <span className="select-arrow">▾</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 系統狀態 */}
+              <div className="status-block">
+                {systemStatus ? (
+                  systemStatus.mode === 'GPU' ? (
+                    <>
+                      <div className="status-row">
+                        <span className="status-badge gpu">GPU</span>
+                        <span className="status-device">{systemStatus.device}</span>
+                      </div>
+                      <div className="status-mem">
+                        <span className="status-mem-label">VRAM</span>
+                        <div className="status-mem-bar-wrap">
+                          <div 
+                            className="status-mem-bar"
+                            style={{
+                              width: `${Math.min(100, (parseFloat(systemStatus.used_memory) / parseFloat(systemStatus.total_memory)) * 100)}%`
+                            }}
+                          />
+                        </div>
+                        <span className="status-mem-text">
+                          {systemStatus.used_memory} / {systemStatus.total_memory}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="status-row">
+                      <span className="status-badge cpu">CPU</span>
+                      <span className="status-device">No CUDA device</span>
+                    </div>
+                  )
+                ) : (
+                  <div className="status-row">
+                    <span className="status-device">Connecting...</span>
+                  </div>
+                )}
+              </div>
+
               <div className="form-group">
-                <label>System Prompt</label>
+                <label className="panel-section-label">System Prompt <span className="required-mark">*</span></label>
                 <textarea
                   value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  onChange={(e) => { setSystemPrompt(e.target.value); setGenerateError('') }}
                   placeholder="Enter system prompt..."
                   rows={3}
+                  className={!systemPrompt.trim() && generateError ? 'input-error' : ''}
                 />
               </div>
               
               <div className="form-group">
-                <label>User Prompt</label>
+                <label className="panel-section-label">User Prompt <span className="required-mark">*</span></label>
                 <textarea
                   value={userPrompt}
-                  onChange={(e) => setUserPrompt(e.target.value)}
+                  onChange={(e) => { setUserPrompt(e.target.value); setGenerateError('') }}
                   placeholder="Enter user prompt..."
                   rows={3}
+                  className={!userPrompt.trim() && generateError ? 'input-error' : ''}
                 />
               </div>
               
               <div className="form-group">
-                <label>Reference Images</label>
+                <label className="panel-section-label">Reference Images</label>
                 <div 
                   className="drop-zone"
                   onDragOver={handleDragOver}
@@ -944,12 +1128,16 @@ function App() {
                 )}
               </div>
               
+              {generateError && (
+                <div className="generate-error">{generateError}</div>
+              )}
+
               <button 
                 className="generate-btn"
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || (!systemPrompt.trim() && !userPrompt.trim() && !generateError)}
               >
-                {isGenerating ? 'Generating...' : 'Generate'}
+                {isGenerating ? 'Generating...' : 'Generate Image'}
               </button>
             </div>
           )}
@@ -957,24 +1145,23 @@ function App() {
           {/* 分頁 2: 編輯 (裁切/箭頭) */}
           {activeTab === 'cut' && (
             <div className="cut-panel">
-              <h3>Edit Image</h3>
               {selectedImage ? (
                 <>
                   <p className="info">Current: {selectedImage.name}</p>
                   
                   {/* 模式切換 */}
                   <div className="edit-mode-toggle">
-                    <label>Edit Mode</label>
+                    <label className="panel-section-label">Edit Mode</label>
                     <div className="toggle-buttons">
                       <button 
                         className={`toggle-btn ${editMode === 'crop' ? 'active' : ''}`}
-                        onClick={() => setEditMode('crop')}
+                        onClick={() => { setEditMode('crop'); setArrowStart(null); setArrowEnd(null); }}
                       >
                         Crop
                       </button>
                       <button 
                         className={`toggle-btn ${editMode === 'arrow' ? 'active' : ''}`}
-                        onClick={() => setEditMode('arrow')}
+                        onClick={() => { setEditMode('arrow'); setSelection(null); }}
                       >
                         Arrow
                       </button>
@@ -984,39 +1171,32 @@ function App() {
                   {editMode === 'crop' ? (
                     /* 裁切模式 */
                     <div className="crop-section">
-                      <p className="instruction">
-                        Drag on the image to select crop area
-                      </p>
-                      {selection && (
-                        <div className="selection-info">
-                          <p>W: {Math.round(Math.abs(selection.endX - selection.startX))}px</p>
-                          <p>H: {Math.round(Math.abs(selection.endY - selection.startY))}px</p>
-                        </div>
-                      )}
+                      <p className="instruction">Drag on image to select crop area</p>
+                      <div className="selection-info">
+                        <span>Width: {selection ? `${Math.round(Math.abs(selection.endX - selection.startX))}px` : '-'}</span>
+                        <span>Height: {selection ? `${Math.round(Math.abs(selection.endY - selection.startY))}px` : '-'}</span>
+                      </div>
                     </div>
                   ) : (
                     /* 箭頭模式 */
                     <div className="arrow-section">
                       <p className="instruction">Click on image to set points</p>
+                      <div className="arrow-color-row">
+                        <span className="arrow-color-label">Color</span>
+                        <label className="arrow-color-swatch-wrap" title="Pick arrow color">
+                          <span className="arrow-color-dot" style={{ background: arrowColor }} />
+                          <input
+                            type="color"
+                            className="arrow-color-picker-hidden"
+                            value={arrowColor}
+                            onChange={e => setArrowColor(e.target.value)}
+                          />
+                        </label>
+                        <span className="arrow-color-hex">{arrowColor.toUpperCase()}</span>
+                      </div>
                       <div className="arrow-status-row">
                         <span>Start: {arrowStart ? `(${Math.round(arrowStart.x)}, ${Math.round(arrowStart.y)})` : '-'}</span>
                         <span>End: {arrowEnd ? `(${Math.round(arrowEnd.x)}, ${Math.round(arrowEnd.y)})` : '-'}</span>
-                      </div>
-                      <div className="arrow-buttons">
-                        <button 
-                          className="clear-btn"
-                          onClick={clearArrow}
-                          disabled={!arrowStart && !arrowEnd}
-                        >
-                          Clear
-                        </button>
-                        <button 
-                          className="save-arrow-btn"
-                          onClick={handleSaveArrowImage}
-                          disabled={!arrowStart || !arrowEnd || isSavingArrow}
-                        >
-                          {isSavingArrow ? 'Saving...' : 'Save'}
-                        </button>
                       </div>
                     </div>
                   )}
@@ -1030,14 +1210,13 @@ function App() {
           {/* 分頁 3: 標籤生成 */}
           {activeTab === 'other' && (
             <div className="tag-panel">
-              <h3>Generate Tag</h3>
               {selectedImage ? (
                 <>
                   <p className="info">Current: {selectedImage.name}</p>
                   
                   {/* 標籤模式切換 */}
                   <div className="tag-mode-toggle">
-                    <label>Tag Mode</label>
+                    <label className="panel-section-label">Tag Mode</label>
                     <div className="toggle-buttons">
                       <button 
                         className={`toggle-btn ${!isManualTagMode ? 'active' : ''}`}
@@ -1058,7 +1237,7 @@ function App() {
                     /* 手動輸入模式 */
                     <>
                       <div className="form-group">
-                        <label>Tag Content</label>
+                        <label className="panel-section-label">Tag Content</label>
                         <textarea
                           value={manualTag}
                           onChange={(e) => setManualTag(e.target.value)}
@@ -1078,8 +1257,29 @@ function App() {
                   ) : (
                     /* AI 生成模式 */
                     <>
+                      {/* Tag Model 選擇 */}
                       <div className="form-group">
-                        <label>System Prompt</label>
+                        <label className="panel-section-label">Model</label>
+                        <div className="select-wrapper">
+                          <select
+                            className="model-select"
+                            value={tagModel}
+                            onChange={(e) => setTagModel(e.target.value)}
+                          >
+                            <optgroup label="Gemini (Cloud)">
+                              <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+                            </optgroup>
+                            <optgroup label="GPT (Cloud)">
+                              <option value="gpt-5.4-2026-03-05">GPT-5.4</option>
+                              <option value="gpt-5.4-mini-2026-03-17">GPT-5.4 Mini</option>
+                            </optgroup>
+                          </select>
+                          <span className="select-arrow">▾</span>
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="panel-section-label">System Prompt</label>
                         <textarea
                           value={tagSystemPrompt}
                           onChange={(e) => setTagSystemPrompt(e.target.value)}
@@ -1089,7 +1289,7 @@ function App() {
                       </div>
                       
                       <div className="form-group">
-                        <label>User Prompt</label>
+                        <label className="panel-section-label">User Prompt</label>
                         <textarea
                           value={tagUserPrompt}
                           onChange={(e) => setTagUserPrompt(e.target.value)}
@@ -1122,6 +1322,7 @@ function App() {
           )}
         </div>
       </aside>
+
     </div>
   )
 }

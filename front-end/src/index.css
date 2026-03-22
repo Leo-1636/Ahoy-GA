@@ -1,3 +1,9 @@
+/* ==========================================
+   全域基礎樣式
+   - 字體、行高、顏色預設
+   - CSS 自訂變數（主題顏色）
+   ========================================== */
+
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.4;
@@ -11,8 +17,12 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 主題強調色，可透過 localStorage 動態替換 */
+  --accent: #e0e0e0;
 }
 
+/* 全版面展開，禁止外層捲動（由內部容器各自處理） */
 html, body, #root {
   margin: 0;
   padding: 0;

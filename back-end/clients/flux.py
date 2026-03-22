@@ -1,48 +1,48 @@
-import os, sys
-
-from transformers.models.idefics.processing_idefics import image_attention_mask_for_packed_input_ids
-if sys.platform == "linux":
-    if os.environ.get("LD_LIBRARY_PATH"):
-        del os.environ["LD_LIBRARY_PATH"]
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
 import torch
-from diffusers import Flux2KleinPipeline as FluxPipeline
+from diffusers import Flux2KleinPipeline
 
-from config.config import model, path
-from utils import system_util
-from utils.image_util import save_image
-
-class Flux2Klein:
-    def __init__(self):
+class ChatFLUX:
+    def __init__(self, model: str, resolution: str, aspect_ratio: str):
         self.dtype = torch.bfloat16
         self.device = "cuda"
-        self.vram_limit = 20 * (1024**3) # 20GB
+        self.config = image_config(resolution, aspect_ratio)
 
-        if torch.cuda.is_available():
-            vram_bytes = torch.cuda.get_device_properties(0).total_memory
-            if vram_bytes > self.vram_limit:
-                self.pipeline = FluxPipeline.from_pretrained(model.flux_2_klein_9b, torch_dtype=self.dtype)
-        else:
-            self.pipeline = FluxPipeline.from_pretrained(model.flux_2_klein_4b, torch_dtype=self.dtype)
+        self.pipeline = Flux2KleinPipeline.from_pretrained(
+            model, 
+            torch_dtype = self.dtype,
+        )
         self.pipeline.enable_model_cpu_offload()
+        
+    def chat_image(self, system_prompt: str, user_prompt: str, image_prompts: list):
+        image = self.pipeline(
+            prompt = f"{system_prompt} {user_prompt}",
+            image = image_prompts,
+            height = self.config.height,
+            width = self.config.width,
+            guidance_scale = 1.0,
+            num_inference_steps = 4,
+            generator = torch.Generator(device = self.device).manual_seed(0)
+        ).images[0]
 
-flux_klein = Flux2Klein()
+        return image
 
-def generate_image(system_prompt: str, user_prompt: str, images: list) -> None:
-    prompt = f"system: {system_prompt} user: {user_prompt}"
-    image = flux_klein.pipeline(
-        prompt = prompt,
-        image = images,
-        height = 1440,
-        width = 2560,
-        guidance_scale = 1.0,
-        num_inference_steps = 4,
-        generator = torch.Generator(device = flux_klein.device).manual_seed(0)
-    ).images[0]
+class image_config:
+    resolution_map = {
+        "4K": 3840, "2K": 2560, "1K": 1024, "512": 512
+    }
+    aspect_ratio_map = {
+        "1:1": (1, 1), "16:9": (16, 9), "9:16": (9, 16), "4:3": (4, 3), "3:4": (3, 4)
+    }
 
-    save_image(
-        image = image,
-        path = path.original / f"{system_util.generate_uuid()}.png"
-    )
-    return image
+    def __init__(self, resolution: str, aspect_ratio: str):
+        self.resolution = self.resolution_map[resolution]
+        self.aspect_ratio = self.aspect_ratio_map[aspect_ratio]
+
+        self.width, self.height = self.calculate()
+
+    def calculate(self):
+        resolution = self.resolution
+        width_ratio, height_ratio = self.aspect_ratio
+        width = int(resolution if width_ratio >= height_ratio else resolution * width_ratio / height_ratio)
+        height = int(resolution if height_ratio >= width_ratio else resolution * height_ratio / width_ratio)
+        return width, height

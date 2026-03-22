@@ -1,0 +1,430 @@
+/* ==========================================
+   Settings.css — 設定頁面樣式
+   結構：
+   - 頁面容器（繼承 index.css 字體與主題色）
+   - 頂部導覽列（返回按鈕 + 標題）
+   - 內容區（置中，最大寬 520px）
+   - 卡片元件（共用區塊容器）
+   - System Status（GPU/CPU 狀態、VRAM 進度條）
+   - Appearance（強調色選擇 + 即時預覽）
+   - API Keys（密碼輸入欄 + 儲存按鈕）
+   ==========================================
+
+   Settings Page — 字體繼承 index.css :root */
+
+.settings-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Nav Bar ── */
+
+.settings-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  height: 44px;
+  background: #111;
+  border-bottom: 1px solid #222;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.settings-back-btn:hover {
+  background: #1a1a1a;
+  color: #888;
+}
+
+.settings-nav-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Content Area ── */
+
+.settings-content {
+  max-width: 520px;
+  width: 100%;
+  margin: 24px auto;
+  padding: 0 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.settings-content > .settings-card {
+  width: 100%;
+}
+
+/* ── Card / Section ── */
+
+.settings-card {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 6px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-card + .settings-card {
+  margin-top: 12px;
+}
+
+.settings-card-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* ── System Status ── */
+
+.status-detail-placeholder {
+  font-size: 11px;
+  color: #444;
+}
+
+.status-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-badge-lg {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.status-badge-lg.gpu {
+  background: rgba(78, 204, 163, 0.15);
+  color: #4ecca3;
+  border: 1px solid rgba(78, 204, 163, 0.3);
+}
+
+.status-badge-lg.cpu {
+  background: rgba(180, 180, 180, 0.1);
+  color: #888;
+  border: 1px solid #333;
+}
+
+.status-detail-device {
+  font-size: 11px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-vram-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-vram-label {
+  font-size: 9px;
+  color: #444;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.status-vram-track {
+  flex: 1;
+  height: 3px;
+  background: #1e1e1e;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.status-vram-fill {
+  height: 100%;
+  background: #4ecca3;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.status-vram-text {
+  font-size: 9px;
+  color: #555;
+  white-space: nowrap;
+  font-family: monospace;
+}
+
+/* ── Appearance ── */
+
+.appearance-main-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.appearance-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+.appearance-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.appearance-preview-items {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.appearance-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appearance-color-swatch-wrap {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.appearance-color-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.12);
+  transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.appearance-color-swatch-wrap:hover .appearance-color-dot {
+  border-color: rgba(255,255,255,0.35);
+  transform: scale(1.1);
+}
+
+.appearance-color-picker-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.appearance-color-hex {
+  font-size: 10px;
+  color: #666;
+  font-family: monospace;
+  letter-spacing: 0.03em;
+}
+
+.appearance-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.appearance-preset-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.appearance-preset-dot:hover {
+  transform: scale(1.2);
+}
+
+.appearance-preset-dot.active {
+  border-color: rgba(255,255,255,0.6);
+  transform: scale(1.15);
+}
+
+/* Preview 區塊 */
+
+.appearance-preview-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.appearance-preview-items {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.appearance-preview-tab {
+  font-size: 11px;
+  font-weight: 500;
+  padding-bottom: 3px;
+  border-bottom: 2px solid;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.appearance-preview-toggle {
+  display: flex;
+  gap: 3px;
+}
+
+.appearance-preview-toggle-btn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid;
+  cursor: default;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.appearance-preview-toggle-btn.inactive {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #555;
+}
+
+/* ── API Keys ── */
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-field + .settings-field {
+  margin-top: 6px;
+}
+
+.settings-field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-field-input {
+  width: 100%;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 11px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.settings-field-input:focus {
+  border-color: #444;
+}
+
+.settings-field-input::placeholder {
+  color: #333;
+}
+
+.settings-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #1e1e1e;
+}
+
+.settings-save-msg {
+  font-size: 10px;
+}
+
+.settings-save-msg.ok {
+  color: #888;
+}
+
+.settings-save-msg.err {
+  color: #c53030;
+}
+
+.settings-save-key-btn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #888;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.settings-save-key-btn:hover:not(:disabled) {
+  background: #222;
+  border-color: #444;
+  color: #ccc;
+}
+
+.settings-save-key-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

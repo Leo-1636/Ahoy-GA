@@ -1,22 +1,21 @@
-import os
-from dotenv import load_dotenv
-load_dotenv()
+from langchain_openai import ChatOpenAI
 
-from langchain_openai import ChatOpenAI as ChatGPT
+from config import api_key
+from clients.message import Message
 
-from config.config import model
-from utils.messages import Messages
+class ChatGPT:
+    def __init__(self, model: str):
+        self.model = ChatOpenAI(
+            model = model,
+            temperature = 1.0,
 
-gpt = ChatGPT(
-    model = model.gpt5,
+            api_key = api_key.chatgpt,
+        )
 
-    temperature = 0.0,
-    api_key = os.getenv("OPENAI_API_KEY"),
-)
+    def chat_text(self, system_prompt: str, user_prompt: str, image_prompt: list):
+        message = Message()
+        message.add_system(system_prompt)
+        message.add_human(user_prompt)
+        message.add_images(image_prompt)
 
-def generate_text(system_prompt: str, user_prompt: str, image) -> str:
-    messages = Messages()
-    messages.add_system(system_prompt)
-    messages.add_human(user_prompt)
-    messages.add_image(image)
-    return gpt.invoke(messages.messages).content
+        return self.model.invoke(message.prompts).content

@@ -1,37 +1,29 @@
-import os
-from dotenv import load_dotenv
-load_dotenv()
+from langchain_google_genai import  ChatGoogleGenerativeAI
 
-from langchain_google_genai import  ChatGoogleGenerativeAI as ChatGemini
+from config import api_key
+from clients.message import Message
 
-from config.config import model, path
-from utils import system_util
-from utils.image_util import save_image
-from utils.messages import Messages
+class ChatGemini:
+    def __init__(self, model: str, resolution: str, aspect_ratio: str):
+        self.model = ChatGoogleGenerativeAI(
+            model = model,
+            temperature = 1.0,
 
-gemini_image = ChatGemini(
-    model = model.gemini_3_image,
+            image_config = {
+                "image_size": resolution,
+                "aspect_ratio": aspect_ratio,
+            },
+            api_key = api_key.gemini,
+        )
+        self.model.bind_tools([{"google_search": {}}])
 
-    temperature = 0.0,
-    image_config = {
-        "image_size": "4K",
-        "aspect_ratio": "16:9", 
-    },
-    
-    api_key = os.getenv("GOOGLE_API_KEY"),
-)
-gemini_image.bind_tools([{"google_search": {}}])
+    def chat_image(self, system_prompt: str, user_prompt: str, image_prompts: list):
+        message = Message()
+        message.add_system(system_prompt)
+        message.add_human(user_prompt)
+        message.add_images(image_prompts)
 
-def gereate_image(system_prompt: str, user_prompt: str, images: list) -> None:
-    messages = Messages()
-    messages.add_system(system_prompt)
-    messages.add_human(user_prompt)
-    for image in images:
-        messages.add_image(image)
-    image = messages.get_images(gemini_image.invoke(messages.messages))
-    save_image(
-        image = image,
-        path = path.original / f"{system_util.generate_uuid()}.png"
-    )
-    return image
-
+        response = self.model.invoke(message.prompts)
+        image = message.get_images(response)
+        
+        return image
