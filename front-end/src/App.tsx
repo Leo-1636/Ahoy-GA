@@ -212,7 +212,7 @@ function App() {
     void fetchStatus()
     const id = window.setInterval(() => {
       void fetchStatus()
-    }, 750)
+    }, 1000)
     return () => window.clearInterval(id)
   }, [isGenerating, fetchStatus])
 
