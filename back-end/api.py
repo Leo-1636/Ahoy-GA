@@ -136,22 +136,16 @@ async def generate_image_endpoint(
             resolution = resolution,
             aspect_ratio = aspect_ratio
         )
-        image = client.chat_image(
-            system_prompt = system_prompt,
-            user_prompt = user_prompt,
-            image_prompts = image_list
-        )
+        image = await asyncio.to_thread(client.chat_image, system_prompt, user_prompt, image_list)
+        
     elif model in [image_model.flux2_klein_4b, image_model.flux2_klein_9b]:
         client = ChatFLUX(
             model        = model,
             resolution   = resolution,
             aspect_ratio = aspect_ratio,
         )
-        image = client.chat_image(
-            system_prompt = system_prompt,
-            user_prompt = user_prompt,
-            image_prompts = image_list
-        )
+        image = await asyncio.to_thread(client.chat_image, system_prompt, user_prompt, image_list)
+
     image_path = root_path.original / f"{path_util.generate_uuid()}.png"
     image_util.save_image(image = image, path = image_path)
 

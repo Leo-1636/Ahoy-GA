@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './App.css'
 
@@ -34,7 +34,57 @@ interface SelectionBox {
  */
 type ActiveTab = 'generate' | 'cut' | 'other'
 
+const PANEL_STORAGE_KEY = 'ahoy-function-panel-v1'
+
+/** 從 sessionStorage 還原右側面板（含分頁與表單），避免往返設定頁或重新整理後重置 */
+interface PersistedPanel {
+  activeTab?: ActiveTab
+  systemPrompt?: string
+  userPrompt?: string
+  selectedModel?: string
+  selectedResolution?: string
+  selectedAspectRatio?: string
+  tagSystemPrompt?: string
+  tagUserPrompt?: string
+  tagModel?: string
+  isManualTagMode?: boolean
+  manualTag?: string
+  generatedTag?: string
+  editMode?: 'crop' | 'arrow'
+  arrowColor?: string
+}
+
+function readPersistedPanel(): PersistedPanel {
+  try {
+    const raw = sessionStorage.getItem(PANEL_STORAGE_KEY)
+    if (!raw) return {}
+    const o = JSON.parse(raw) as Record<string, unknown>
+    const out: PersistedPanel = {}
+    if (o.activeTab === 'generate' || o.activeTab === 'cut' || o.activeTab === 'other') {
+      out.activeTab = o.activeTab
+    }
+    if (typeof o.systemPrompt === 'string') out.systemPrompt = o.systemPrompt
+    if (typeof o.userPrompt === 'string') out.userPrompt = o.userPrompt
+    if (typeof o.selectedModel === 'string') out.selectedModel = o.selectedModel
+    if (typeof o.selectedResolution === 'string') out.selectedResolution = o.selectedResolution
+    if (typeof o.selectedAspectRatio === 'string') out.selectedAspectRatio = o.selectedAspectRatio
+    if (typeof o.tagSystemPrompt === 'string') out.tagSystemPrompt = o.tagSystemPrompt
+    if (typeof o.tagUserPrompt === 'string') out.tagUserPrompt = o.tagUserPrompt
+    if (typeof o.tagModel === 'string') out.tagModel = o.tagModel
+    if (typeof o.isManualTagMode === 'boolean') out.isManualTagMode = o.isManualTagMode
+    if (typeof o.manualTag === 'string') out.manualTag = o.manualTag
+    if (typeof o.generatedTag === 'string') out.generatedTag = o.generatedTag
+    if (o.editMode === 'crop' || o.editMode === 'arrow') out.editMode = o.editMode
+    if (typeof o.arrowColor === 'string') out.arrowColor = o.arrowColor
+    return out
+  } catch {
+    return {}
+  }
+}
+
 function App() {
+  const persisted = useMemo(() => readPersistedPanel(), [])
+
   // --- 狀態管理 ---
   
   // 伺服器上的圖片列表
@@ -54,15 +104,19 @@ function App() {
   const [isDeleting, setIsDeleting] = useState(false)
   
   // 當前功能分頁
-  const [activeTab, setActiveTab] = useState<ActiveTab>('generate')
+  const [activeTab, setActiveTab] = useState<ActiveTab>(persisted.activeTab ?? 'generate')
   
   // 生成圖片相關狀態
-  const [systemPrompt, setSystemPrompt] = useState('')
-  const [userPrompt, setUserPrompt] = useState('')
+  const [systemPrompt, setSystemPrompt] = useState(persisted.systemPrompt ?? '')
+  const [userPrompt, setUserPrompt] = useState(persisted.userPrompt ?? '')
   const [generateError, setGenerateError] = useState('')
-  const [selectedModel, setSelectedModel] = useState('gemini-3.1-flash-image-preview')
-  const [selectedResolution, setSelectedResolution] = useState('1K')
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState('1:1')
+  const [selectedModel, setSelectedModel] = useState(
+    persisted.selectedModel ?? 'gemini-3.1-flash-image-preview'
+  )
+  const [selectedResolution, setSelectedResolution] = useState(persisted.selectedResolution ?? '1K')
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState(
+    persisted.selectedAspectRatio ?? '1:1'
+  )
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]) // 原始 File 物件
   const [previewUrls, setPreviewUrls] = useState<string[]>([])    // 用於預覽的 Blob URLs
   const [isGenerating, setIsGenerating] = useState(false)
@@ -76,22 +130,22 @@ function App() {
   const [isCutting, setIsCutting] = useState(false)
   
   // 標籤生成相關狀態
-  const [tagSystemPrompt, setTagSystemPrompt] = useState('')
-  const [tagUserPrompt, setTagUserPrompt] = useState('')
-  const [generatedTag, setGeneratedTag] = useState('')
+  const [tagSystemPrompt, setTagSystemPrompt] = useState(persisted.tagSystemPrompt ?? '')
+  const [tagUserPrompt, setTagUserPrompt] = useState(persisted.tagUserPrompt ?? '')
+  const [generatedTag, setGeneratedTag] = useState(persisted.generatedTag ?? '')
   const [isGeneratingTag, setIsGeneratingTag] = useState(false)
-  const [isManualTagMode, setIsManualTagMode] = useState(false)
-  const [tagModel, setTagModel] = useState('gemini-3-flash-preview')
-  const [manualTag, setManualTag] = useState('')
+  const [isManualTagMode, setIsManualTagMode] = useState(persisted.isManualTagMode ?? false)
+  const [tagModel, setTagModel] = useState(persisted.tagModel ?? 'gemini-3-flash-preview')
+  const [manualTag, setManualTag] = useState(persisted.manualTag ?? '')
   
   // 箭頭繪製相關狀態
   const [arrowStart, setArrowStart] = useState<{ x: number; y: number } | null>(null)
   const [arrowEnd, setArrowEnd] = useState<{ x: number; y: number } | null>(null)
   const [isSavingArrow, setIsSavingArrow] = useState(false)
-  const [arrowColor, setArrowColor] = useState('#ff0000')
+  const [arrowColor, setArrowColor] = useState(persisted.arrowColor ?? '#ff0000')
   
   // 編輯模式切換 (crop 或 arrow)
-  const [editMode, setEditMode] = useState<'crop' | 'arrow'>('crop')
+  const [editMode, setEditMode] = useState<'crop' | 'arrow'>(persisted.editMode ?? 'crop')
 
   const navigate = useNavigate()
 
@@ -151,6 +205,58 @@ function App() {
     fetchImages()
     fetchStatus()
   }, [fetchImages, fetchStatus])
+
+  // 按下生成後在請求進行中定期打 /api/status，VRAM 才會跟著推理過程更新
+  useEffect(() => {
+    if (!isGenerating) return
+    void fetchStatus()
+    const id = window.setInterval(() => {
+      void fetchStatus()
+    }, 750)
+    return () => window.clearInterval(id)
+  }, [isGenerating, fetchStatus])
+
+  // 將右側面板選項與分頁寫入 sessionStorage（切換 Image/Edit/Tag 或往返設定頁皆保留）
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        PANEL_STORAGE_KEY,
+        JSON.stringify({
+          activeTab,
+          systemPrompt,
+          userPrompt,
+          selectedModel,
+          selectedResolution,
+          selectedAspectRatio,
+          tagSystemPrompt,
+          tagUserPrompt,
+          tagModel,
+          isManualTagMode,
+          manualTag,
+          generatedTag,
+          editMode,
+          arrowColor,
+        })
+      )
+    } catch {
+      /* 無痕模式或配額 */
+    }
+  }, [
+    activeTab,
+    systemPrompt,
+    userPrompt,
+    selectedModel,
+    selectedResolution,
+    selectedAspectRatio,
+    tagSystemPrompt,
+    tagUserPrompt,
+    tagModel,
+    isManualTagMode,
+    manualTag,
+    generatedTag,
+    editMode,
+    arrowColor,
+  ])
 
   // 面板拖曳調整寬度
   useEffect(() => {
@@ -368,6 +474,7 @@ function App() {
       setGenerateError('無法連線到後端，請確認伺服器是否啟動')
     } finally {
       setIsGenerating(false)
+      void fetchStatus()
     }
   }
 
