@@ -129,8 +129,6 @@ async def generate_image_endpoint(
     for image_prompt in image_prompts:
         contents = await image_prompt.read()
         image_list.append(image_util.open_bytes(contents))
-    if not image_list:
-        image_list = None
 
     if model in [image_model.nano_banana_2, image_model.nano_banana_pro]:
         client = ChatGemini(

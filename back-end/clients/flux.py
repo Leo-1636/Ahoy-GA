@@ -14,16 +14,26 @@ class ChatFLUX:
         self.pipeline.enable_model_cpu_offload()
         
     def chat_image(self, system_prompt: str, user_prompt: str, image_prompts: list):
-        
-        image = self.pipeline(
-            prompt = f"{system_prompt} {user_prompt}",
-            image = image_prompts,
-            height = self.config.height,
-            width = self.config.width,
-            guidance_scale = 1.0,
-            num_inference_steps = 4,
-            generator = torch.Generator(device = self.device).manual_seed(0)
-        ).images[0]
+
+        if image_prompts != []:
+            image = self.pipeline(
+                prompt = f"{system_prompt} {user_prompt}",
+                image = image_prompts,
+                height = self.config.height,
+                width = self.config.width,
+                guidance_scale = 1.0,
+                num_inference_steps = 4,
+                generator = torch.Generator(device = self.device).manual_seed(0)
+            ).images[0]
+        else:
+            image = self.pipeline(
+                prompt = f"{system_prompt} {user_prompt}",
+                height = self.config.height,
+                width = self.config.width,
+                guidance_scale = 1.0,
+                num_inference_steps = 4,
+                generator = torch.Generator(device = self.device).manual_seed(0)
+            ).images[0]
 
         return image
 
