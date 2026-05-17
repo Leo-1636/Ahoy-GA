@@ -1,16 +1,21 @@
+# Environment
 .env
 .env.*
 !.env.example
 
-storage/
+# Virtual environments
+.venv/
+venv/
+env/
 
-node_modules/
-
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyo
-.Python
-.venv/
-venv/
-env/
+
+# Storage
+storage/
+
+# Node modules
+node_modules/

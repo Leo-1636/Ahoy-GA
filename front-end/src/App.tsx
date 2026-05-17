@@ -923,7 +923,7 @@ function App() {
             top: hoverPosition.y + 15
           }}
         >
-          <img src={`/api/images/${hoveredImage.path}`} alt={hoveredImage.name} />
+          <img src={`/api/images/${hoveredImage.path}?preview=1`} alt={hoveredImage.name} />
         </div>
       )}
 

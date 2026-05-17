@@ -2,6 +2,7 @@ import base64
 import io
 import math
 from pathlib import Path
+from typing import Union
 
 from PIL import Image, ImageDraw, ImageColor
 
@@ -13,8 +14,17 @@ def to_bytes(image: Image.Image) -> bytes:
 def to_base64(image: Image.Image) -> str:
     return base64.b64encode(to_bytes(image)).decode('utf-8')
 
-def open_image(image_path: str) -> Image.Image:
+def open_image(image_path: Union[str, Path]) -> Image.Image:
     return Image.open(image_path)
+
+def to_preview_bytes(image_path: Path, max_size: int = 400) -> bytes:
+    with Image.open(image_path) as image:
+        image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        if image.mode in ("RGBA", "P"):
+            image = image.convert("RGB")
+        buffer = io.BytesIO()
+        image.save(buffer, format = "JPEG", quality = 85, optimize = True)
+        return buffer.getvalue()
 
 def open_bytes(bytes: bytes) -> Image.Image:
     return Image.open(io.BytesIO(bytes))

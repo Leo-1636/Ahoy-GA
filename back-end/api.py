@@ -3,7 +3,7 @@ from typing import List, Optional
 
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from clients.gemini import ChatGemini
@@ -53,16 +53,33 @@ async def get_images_endpoint():
         })
     return images
 
+_preview_cache: dict[tuple[str, int], bytes] = {}
+
 @app.get("/images/{image_path:path}")
-async def get_image_endpoint(image_path: str):
-    image_path = path_util.to_path(image_path)
-    if not image_path.exists():
+async def get_image_endpoint(image_path: str, preview: bool = False):
+    path = path_util.to_path(image_path)
+    if not path.exists():
         raise HTTPException(status_code = 404, detail = "Image not found")
 
-    image = image_util.open_image(image_path)
-    return Response(
-        content = image_util.to_bytes(image),
-        media_type = "image/png"
+    if preview:
+        mtime = int(path.stat().st_mtime)
+        cache_key = (str(path), mtime)
+        cached = _preview_cache.get(cache_key)
+        if cached is None:
+            if len(_preview_cache) > 128:
+                _preview_cache.clear()
+            cached = await asyncio.to_thread(image_util.to_preview_bytes, path)
+            _preview_cache[cache_key] = cached
+        return Response(
+            content = cached,
+            media_type = "image/jpeg",
+            headers = {"Cache-Control": "public, max-age=86400"},
+        )
+
+    return FileResponse(
+        path,
+        media_type = "image/png",
+        headers = {"Cache-Control": "public, max-age=86400"},
     )
 
 @app.post("/images/cut")
@@ -177,4 +194,4 @@ async def generate_text_endpoint(
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, port = 8000)
+    uvicorn.run(app, port = 8000, reload = True)
