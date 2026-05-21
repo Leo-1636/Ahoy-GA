@@ -1,26 +1,28 @@
 from pathlib import Path
+from dotenv import get_key, set_key
 
-class api_key:
-    gemini = None
-    chatgpt = None
+class Paths:
+    workspace = Path.cwd() / "workspace"
+    environment = Path.cwd() / ".env"
 
-class root_path:
-    storage  = Path(__file__).parent.parent / "storage"
-    original = storage / "original"
-    datasets = storage / "datasets"
+    original  = Path(workspace) / "original"
+    datasets  = Path(workspace) / "datasets"
 
-class llm_model:
-    gpt5          = "gpt-5.4-2026-03-05"
-    gpt5_mini     = "gpt-5.4-mini-2026-03-17"
-    gemini3_flash = "gemini-3-flash-preview"
+class ApiKeys:
+    openai = get_key(Paths.environment, "OPENAI_API_KEY")
+    google = get_key(Paths.environment, "GOOGLE_API_KEY")
 
-class image_model:
+    @staticmethod
+    def set(name: str, key: str):
+        set_key(Paths.environment, name, key)
+
+class Models:
+    gpt_5_4_mini    = "gpt-5.4-mini"
+    gemini_3_flash  = "gemini-3-flash-preview"
+
+    gpt_image_2     = "gpt-image-2"
     nano_banana_pro = "gemini-3-pro-image-preview"
     nano_banana_2   = "gemini-3.1-flash-image-preview"
 
-    flux2_klein_4b = "black-forest-labs/FLUX.2-klein-4B"
-    flux2_klein_9b = "black-forest-labs/FLUX.2-klein-9B"
-
-def set_api_key(gemini: str, chatgpt: str):
-    api_key.gemini  = gemini
-    api_key.chatgpt = chatgpt
+    flux2_klein_4b  = "black-forest-labs/FLUX.2-klein-4B"
+    flux2_klein_9b  = "black-forest-labs/FLUX.2-klein-9B"
