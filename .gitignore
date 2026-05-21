@@ -15,7 +15,9 @@ __pycache__/
 *.pyo
 
 # Storage
-storage/
+workspace/
+original/
+datasets/
 
 # Node modules
 node_modules/
